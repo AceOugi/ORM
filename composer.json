@@ -3,5 +3,13 @@
     "type": "library",
     "require": {
         "php": "^7.0"
+    },
+    "autoload": {
+        "files": [ "src/function.php" ],
+        "classmap": [
+            "src/ORM.php",
+            "src/ORMSkeleton.php",
+            "src/ORMEntity.php"
+        ]
     }
 }
