@@ -1,0 +1,7 @@
+{
+    "name": "aceougi/orm",
+    "type": "library",
+    "require": {
+        "php": "^7.0"
+    }
+}
