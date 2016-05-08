@@ -4,6 +4,9 @@
     "require": {
         "php": "^7.0"
     },
+    "require-dev": {
+        "phpunit/phpunit": "*"
+    },
     "autoload": {
         "files": [ "src/function.php" ],
         "classmap": [
