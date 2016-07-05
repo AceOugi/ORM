@@ -2,17 +2,18 @@
     "name": "aceougi/orm",
     "type": "library",
     "require": {
-        "php": "^7.0"
+        "php": "^7.0",
+        "aceougi/server": "*"
     },
     "require-dev": {
-        "phpunit/phpunit": "*"
     },
     "autoload": {
-        "files": [ "src/function.php" ],
+        "files": [ "inc/function.php" ],
         "classmap": [
             "src/ORM.php",
             "src/ORMSkeleton.php",
             "src/ORMEntity.php"
         ]
-    }
+    },
+    "minimum-stability": "dev"
 }
