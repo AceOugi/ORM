@@ -181,7 +181,7 @@ class ORMSkeleton
 
         foreach ($data as $key => $value)
         {
-            $data_name[] = $key;
+            $data_name[] = "`$key`";
             $data_link[] = '?';
             $data_data[] = $value;
         }
@@ -304,7 +304,7 @@ class ORMSkeleton
 
         foreach ($data as $key => $value)
         {
-            $data_name[] = $key;
+            $data_name[] = "`$key`";
             $data_link[] = '?';
             $data_data[] = $value;
         }
@@ -334,7 +334,7 @@ class ORMSkeleton
 
         foreach ($data as $key => $value)
         {
-            $data_name[] = $key;
+            $data_name[] = "`$key`";
             $data_link[] = '?';
             $data_data[] = $value;
         }
