@@ -3,11 +3,15 @@
     "type": "library",
     "require": {
         "php": "^7.0",
-        "aceougi/server": "*"
+        "aceougi/orq": "*",
+        "mustangostang/spyc": "*",
+        "twig/twig": "1.24"
     },
     "require-dev": {
+        "aceougi/server": "*"
     },
     "autoload": {
+        "psr-4": { "AceOugi\\CODAddon\\": "src/Generator" },
         "files": [ "inc/function.php" ],
         "classmap": [
             "src/ORM.php",
