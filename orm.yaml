@@ -1,0 +1,20 @@
+settings:
+    path: xxx/
+    hide_database: information_schema|mysql|performance_schema|phpmyadmin
+
+database:
+        dsn: mysql:host=pma.aceougi.com;port=63301;charset=UTF8
+        username: buddhabot
+        password: 12345678
+
+data:
+    test:
+        disabled: true
+
+
+
+
+
+
+
+
