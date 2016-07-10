@@ -19,5 +19,6 @@
             "src/ORMEntity.php"
         ]
     },
+    "bin": ["orm"],
     "minimum-stability": "dev"
 }
