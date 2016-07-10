@@ -1,0 +1,309 @@
+<?php namespace ORM{% if namespace is defined %}\{{ namespace }}{% endif %};
+
+/**
+ */
+class {{ class }}
+{
+    static protected $properties = [{% for property in properties %}'{{ property.column }}' => NULL{% if not loop.last %}, {% endif %}{% endfor %}];
+
+    
+    /**
+     * @return \PDO
+     */
+    static function pdo()
+    {
+        return $GLOBALS['pdo'];
+    }
+    
+    static function filtrate($data)
+    {
+        return array_intersect_key($data, self::$properties);
+    }
+    
+    static function sqlWhere($params)
+    {
+        $sql = implode('` = ? AND `', array_keys($params));
+    
+        return (strlen($sql)) ? ' WHERE `'.$sql.'` = ?' : '';
+    }
+    
+    static function sqlWhereData($params)
+    {
+        return array_values($params);
+    }
+    
+    static function sqlExtra(...$extra)
+    {
+        $sql = '';
+    
+        foreach ($extra as $elem)
+            $sql.= ' '.$elem;
+    
+        return $sql;
+    }
+    
+    static function sqlSet($data)
+    {
+        $sql = implode('` = ?, `', array_keys($data));
+    
+        return (strlen($sql)) ? ' SET `'.$sql.'` = ?' : '';
+    }
+    
+    static function sqlSetData($data)
+    {
+        return array_values($data);
+    }
+    
+    static function sqlInsert($data)
+    {
+        $sql = implode('`, `', array_keys($data));
+    
+        return (strlen($sql)) ? ' (`'.$sql.'`)' : '';
+    }
+    
+    static function sqlInsertValues($data)
+    {
+        $sql = '';
+        foreach ($data as $_)
+            $sql.= ( (strlen($sql)) ? ', ' : '' ) . '?';
+    
+        return (strlen($sql)) ? ' VALUES ('.$sql.')' : '';
+    }
+    
+    static function sqlInsertData($data)
+    {
+        return array_values($data);
+    }
+    
+    /**
+     * @param array $params
+     * @param ...$extra
+     * @return \ORME{% if namespace is defined %}\{{ namespace }}{% endif %}\{{class}}|null
+     */
+    static function select($params = array(), ...$extra)
+    {
+        $extra[] = 'LIMIT 1';
+        return ($tmp = self::selects($params, ...$extra)) ? reset($tmp) : null;
+    }
+    
+{% for index in indexes_uni %}
+    /**
+{% for property in index.properties %}
+     * @param string $param_{{ property.column }}
+{% endfor %}
+     * @param ...$extra
+     * @return \ORME{% if namespace is defined %}\{{ namespace }}{% endif %}\{{class}}|null
+     */
+    static function selectBy{{ index.name }}({% for property in index.properties %}$param_{{ property.column }}{% if not loop.last %}, {% endif %}{% endfor %}, ...$extra)
+    {
+        return self::select([{% for property in index.properties %}'{{ property.column }}' => $param_{{ property.column }}{% if not loop.last %}, {% endif %}{% endfor %}], ...$extra);
+    }
+    
+{% endfor %}
+    /**
+     * @param array $params
+     * @param ...$extra
+     * @return \ORME{% if namespace is defined %}\{{ namespace }}{% endif %}\{{class}}[]
+     */
+    static function selects($params = array(), ...$extra)
+    {
+        $objects = [];
+        $params = self::filtrate($params);
+        
+        $req = self::pdo()->prepare( 'SELECT * FROM `{{ database }}`.`{{ table }}`' . self::sqlWhere($params) . self::sqlExtra(...$extra) );
+        
+        if ($req->execute(self::sqlWhereData($params)))
+        {
+            while($data = $req->fetch())
+            {
+                $object = new \ORME{% if namespace is defined %}\{{ namespace }}{% endif %}\{{class}}();
+                $object->hydrate($data);
+                $objects[] = $object;
+            }
+        }
+        
+        return $objects;
+    }
+    
+{% for index in indexes_mul %}
+    /**
+{% for property in index.properties %}
+     * @param string $param_{{ property.column }}
+{% endfor %}
+     * @param ...$extra
+     * @return \ORME{% if namespace is defined %}\{{ namespace }}{% endif %}\{{class}}[]
+     */
+    static function selectsBy{{ index.name }}({% for property in index.properties %}$param_{{ property.column }}{% if not loop.last %}, {% endif %}{% endfor %}, ...$extra)
+    {
+        return self::selects([{% for property in index.properties %}'{{ property.column }}' => $param_{{ property.column }}{% if not loop.last %}, {% endif %}{% endfor %}], ...$extra);
+    }
+    
+{% endfor %}
+    /**
+     * @param array ...$list
+     * @return int
+     */
+    static function inserts(array ...$list)
+    {
+        $success = 0;
+    
+        foreach ($list as $data)
+            if (self::insert($data))
+                $success++;
+    
+        return $success;
+    }
+    
+    /**
+     * @param array $data
+     * @return bool
+     */
+    static function insert($data)
+    {
+        $data = self::filtrate($data);
+    
+        $req = self::pdo()->prepare('INSERT INTO `{{ database }}`.`{{ table }}`'.self::sqlInsert($data).self::sqlInsertValues($data));
+        
+        return $req->execute(self::sqlInsertData($data));
+    }
+    
+    /**
+     * @param array $data
+     * @param array $params
+     * @param ...$extra
+     * @return bool
+     */
+    static function update($data, $params = array(), ...$extra)
+    {
+        $extra[] = 'LIMIT 1';
+        return self::updates($data, $params, ...$extra);
+    }
+    
+{% for index in indexes_uni %}
+    /**
+     * @param array $data
+{% for property in index.properties %}
+     * @param string $param_{{ property.column }}
+{% endfor %}
+     * @param ...$extra
+     * @return bool
+     */
+    static function updateBy{{ index.name }}($data, {% for property in index.properties %}$param_{{ property.column }}{% if not loop.last %}, {% endif %}{% endfor %}, ...$extra)
+    {
+        return self::update($data, [{% for property in index.properties %}'{{ property.column }}' => $param_{{ property.column }}{% if not loop.last %}, {% endif %}{% endfor %}], ...$extra);
+    }
+    
+{% endfor %}
+    /**
+     * @param array $data
+     * @param array $params
+     * @param ...$extra
+     * @return int
+     */
+    static function updates($data, $params = array(), ...$extra)
+    {
+        $data = self::filtrate($data);
+        $params = self::filtrate($params);
+        
+        $req = self::pdo()->prepare( 'UPDATE `{{ database }}`.`{{ table }}`' . self::sqlSet($data) . self::sqlWhere($params) . self::sqlExtra(...$extra) );
+        
+        return $req->execute( array_merge(self::sqlSetData($data), self::sqlWhereData($params)) );
+    }
+    
+{% for index in indexes_mul %}
+    /**
+     * @param array $data
+{% for property in index.properties %}
+     * @param string $param_{{ property.column }}
+{% endfor %}
+     * @param ...$extra
+     * @return int
+     */
+    static function updatesBy{{ index.name }}($data, {% for property in index.properties %}$param_{{ property.column }}{% if not loop.last %}, {% endif %}{% endfor %}, ...$extra)
+    {
+        return self::updates($data, [{% for property in index.properties %}'{{ property.column }}' => $param_{{ property.column }}{% if not loop.last %}, {% endif %}{% endfor %}], ...$extra);
+    }
+    
+{% endfor %}
+    /**
+     * @param array $params
+     * @param ...$extra
+     * @return bool
+     */
+    static function delete($params = array(), ...$extra)
+    {
+        $extra[] = 'LIMIT 1';
+        return self::deletes($params, ...$extra);
+    }
+    
+{% for index in indexes_uni %}
+    /**
+{% for property in index.properties %}
+     * @param string $param_{{ property.column }}
+{% endfor %}
+     * @param ...$extra
+     * @return bool
+     */
+    static function deleteBy{{ index.name }}({% for property in index.properties %}$param_{{ property.column }}{% if not loop.last %}, {% endif %}{% endfor %}, ...$extra)
+    {
+        return self::delete([{% for property in index.properties %}'{{ property.column }}' => $param_{{ property.column }}{% if not loop.last %}, {% endif %}{% endfor %}], ...$extra);
+    }
+    
+{% endfor %}
+    /**
+     * @param array $params
+     * @param ...$extra
+     * @return int
+     */
+    static function deletes($params = array(), ...$extra)
+    {
+        $params = self::filtrate($params);
+        
+        $req = self::pdo()->prepare( 'DELETE FROM `{{ database }}`.`{{ table }}`' . self::sqlWhere($params) . self::sqlExtra(...$extra) );
+        
+        return $req->execute(self::sqlWhereData($params));
+    }
+    
+{% for index in indexes_mul %}
+    /**
+{% for property in index.properties %}
+     * @param string $param_{{ property.column }}
+{% endfor %}
+     * @param ...$extra
+     * @return int
+     */
+    static function deletesBy{{ index.name }}({% for property in index.properties %}$param_{{ property.column }}{% if not loop.last %}, {% endif %}{% endfor %}, ...$extra)
+    {
+        return self::deletes([{% for property in index.properties %}'{{ property.column }}' => $param_{{ property.column }}{% if not loop.last %}, {% endif %}{% endfor %}], ...$extra);
+    }
+    
+{% endfor %}
+    /**
+     * @param array $params
+     * @param ...$extra
+     * @return int
+     */
+    static function count($params = array(), ...$extra)
+    {
+        $params = self::filtrate($params);
+        
+        $req = self::pdo()->prepare( 'SELECT * FROM `{{ database }}`.`{{ table }}`' . self::sqlWhere($params) . self::sqlExtra(...$extra) );
+        
+        return ($req->execute(self::sqlWhereData($params))) ? $req->fetchColumn() : 0;
+    }
+    
+{% for index in indexes_mul %}
+    /**
+{% for property in index.properties %}
+     * @param string $param_{{ property.column }}
+{% endfor %}
+     * @param ...$extra
+     * @return int
+     */
+    static function countBy{{ index.name }}({% for property in index.properties %}$param_{{ property.column }}{% if not loop.last %}, {% endif %}{% endfor %}, ...$extra)
+    {
+        return self::count([{% for property in index.properties %}'{{ property.column }}' => $param_{{ property.column }}{% if not loop.last %}, {% endif %}{% endfor %}], ...$extra);
+    }
+    
+{% endfor %}
+}

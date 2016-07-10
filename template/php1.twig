@@ -1,0 +1,156 @@
+<?php namespace ORME{% if namespace is defined %}\{{ namespace }}{% endif %};
+
+/**
+{% for property in properties %}
+ * @property string ${{ property.id }}
+{% endfor %}
+{% for alias in aliases %}
+ * @property string ${{ alias.id }}
+{% endfor %}
+{% for link in links %}
+ * @property-read \ORME{% if link.namespace is defined %}\{{ link.namespace }}{% endif %}\{{ link.class }}{% if link.multiple %}[]{% endif %} ${{ link.id }}
+{% endfor %}
+ */
+class {{ class }}
+{
+    protected $data = [{% for property in properties %}'{{ property.column }}' => NULL{% if not loop.last %}, {% endif %}{% endfor %}];
+    
+    /**
+     * Constructor
+     */
+    function __construct()
+    {
+    }
+    
+    /**
+     * @param array $data
+     */
+    function hydrate(array $data)
+    {
+        $this->data = array_merge($this->data, array_intersect_key($data, $this->data));
+    }
+    
+    /**
+     * @param string $name
+     * @return string
+     */
+    function __get($name)
+    {
+        switch ($name)
+        {
+            // Properties
+{% for property in properties %}
+            case '{{ property.id }}': return $this->get{{ property.name }}();
+{% endfor %}
+            // Aliases
+{% for alias in aliases %}
+            case '{{ alias.id }}': return $this->get{{ alias.name }}();
+{% endfor %}
+            // Links
+{% for link in links %}
+            case '{{ link.id }}': return $this->get{{ link.name }}();
+{% endfor %}
+            // Undefined
+            default:
+                $trace = debug_backtrace();
+                trigger_error(
+                    '<br />'."\r\n".
+                    '<b>Notice</b>:  Undefined property: '.__CLASS__.'::$'.$name.
+                    ' in <b>'.$trace[0]['file'].'</b>'.
+                    ' on line <b>'.$trace[0]['line'].'</b><br />'."\r\n".
+                    '<br />',
+                    E_USER_NOTICE
+                );
+                return null;
+        }
+    }
+    
+{% for property in properties %}
+    /** @return string */
+    function get{{ property.name }}() { return $this->data['{{ property.column }}']; }
+    
+{% endfor %}
+{% for alias in aliases %}
+    /** @return string */
+    function get{{ alias.name }}() { return $this->data['{{ alias.column }}']; }
+    
+{% endfor %}
+{% for link in links %}
+    /** @return \ORME{% if link.namespace is defined %}\{{ link.namespace }}{% endif %}\{{ link.class }}{% if link.multiple %}[]{% endif %} */
+    function get{{ link.name }}()
+    {
+        return \ORM{% if link.namespace is defined %}\{{ link.namespace }}{% endif %}\{{ link.class }}::select{% if link.multiple %}s{% endif %}([{% for from, to in link.check %}{% if not loop.first %}, {% endif %}'{{ to }}' => $this->data['{{ from }}']{% endfor %}]);
+    }
+    
+{% endfor %}
+    /**
+     * @param string $name
+     * @param mixed $value
+     */
+    function __set($name, $value) {
+        switch ($name)
+        {
+            // Properties
+{% for property in properties %}
+            case '{{ property.id }}': $this->set{{ property.name }}($value); break;
+{% endfor %}
+            // Aliases
+{% for alias in aliases %}
+            case '{{ alias.id }}': $this->set{{ alias.name }}($value); break;
+{% endfor %}
+            // Undefined
+            default:
+                $trace = debug_backtrace();
+                trigger_error(
+                    '<br />'."\r\n".
+                    '<b>Notice</b>:  Undefined property: '.__CLASS__.'::$'.$name.
+                    ' in <b>'.$trace[0]['file'].'</b>'.
+                    ' on line <b>'.$trace[0]['line'].'</b><br />'."\r\n".
+                    '<br />',
+                    E_USER_NOTICE
+                );
+                break;
+        }
+    }
+    
+{% for property in properties %}
+    /** @param mixed $value */
+    function set{{ property.name }}($value)
+    {
+        return $this->updateColumn('{{ property.column }}', $value);
+    }
+    
+{% endfor %}
+{% for property in aliases %}
+    /** @param mixed $value */
+    function set{{ property.name }}($value)
+    {
+        return $this->updateColumn('{{ property.column }}', $value);
+    }
+    
+{% endfor %}
+    protected function updateColumn($column, $value)
+    {
+{% if uni is defined %}
+        \ORM{% if namespace is defined %}\{{ namespace }}{% endif %}\{{ class }}::updateBy{{ uni.name }}([$column => $value], {% for column in uni.columns %}$this->data['{{ column.column }}']{% if not loop.last %}, {% endif %}{% endfor %});
+{% else %}
+        \ORM{% if namespace is defined %}\{{ namespace }}{% endif %}\{{ class }}::update([$column => $value], $this->data);
+{% endif %}
+        $this->data[$column] = $value;
+        return $this->updateRow([$column => $value]);
+    }
+    
+    protected function updateRow($data)
+    {
+        return true;
+    }
+    function delete()
+    {
+{% if uni is defined %}
+        \ORM{% if namespace is defined %}\{{ namespace }}{% endif %}\{{ class }}::deleteBy{{ uni.name }}({% for column in uni.columns %}$this->data['{{ column.column }}']{% if not loop.last %}, {% endif %}{% endfor %});
+{% else %}
+        \ORM{% if namespace is defined %}\{{ namespace }}{% endif %}\{{ class }}::delete($this->data);
+{% endif %}
+    }
+    
+}
