@@ -1,5 +1,7 @@
 <?php
 
+if (is_file(__DIR__.'/../../autoload.php')) include __DIR__.'/../../autoload.php';
+else
 require 'vendor/autoload.php';
 require __DIR__.'/orm_generator.php';
 
