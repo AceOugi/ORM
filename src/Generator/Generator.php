@@ -15,7 +15,7 @@ class Generator
     }
 
     /** @var string */
-    protected $file_path = APP_DIR.'/database/generator.json';
+    protected $file_path = 'orm.json';
     /** @var \stdClass */
     protected $file_data;
 
@@ -38,7 +38,11 @@ class Generator
      */
     public function __construct()
     {
-        global $pdo;
+        global $pdo, $all;
+
+        $this->pdo = $pdo;
+        $this->file_data = $all;
+        return;
 
         // Load
         $this->file_data = json_decode(file_get_contents( $this->file_path ));
@@ -666,7 +670,7 @@ class Generator
     function __destruct()
     {
         // Save
-        file_put_contents($this->file_path, json_encode($this->file_data, JSON_PRETTY_PRINT));
+        //file_put_contents($this->file_path, json_encode($this->file_data, JSON_PRETTY_PRINT));
     }
 
     public function wordOO($words)

@@ -18,14 +18,16 @@ trait GeneratorGenerateTrait
     public function generate()
     {
         global $pdo;
+        global $all;
+        global $title1, $title2, $source1, $source2;
 
         $loader = new \Twig_Loader_Array([
             'hello' => 'Hello {{ name }}',
             //'test'  => \ORMD::database('old')->template_tpl->selectByPRIMARY( $_REQUEST['id'] ?? 1 )->tpl_content,
-            'f_orme' => $this->template_file(1),
-            'c_orme' => $this->template(1),
-            'f_orm'  => $this->template_file(2),
-            'c_orm'  => $this->template(2),
+            'f_orme' => $title1,
+            'c_orme' => $source1,
+            'f_orm'  => $title2,
+            'c_orm'  => $source2,
         ]);
         $twig = new \Twig_Environment($loader); 
 
@@ -36,7 +38,8 @@ trait GeneratorGenerateTrait
             'f_orm' => 'c_orm',
         ];
 
-        $dir = ROOT_DIR.'\\inc\\';
+        $dir = $all->settings->path ?? 'inc_orm';
+        $dir.= '/';
 
         if (file_exists($dir.'ORM'))
             $this->delTree($dir.'ORM');
